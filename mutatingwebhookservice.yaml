@@ -1,0 +1,116 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    app: simple-kubernetes-webhook
+  name: simple-kubernetes-webhook
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: simple-kubernetes-webhook
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: simple-kubernetes-webhook
+    spec:
+      containers:
+      - env:
+        - name: TLS
+          value: "true"
+        - name: LOG_LEVEL
+          value: trace
+        - name: LOG_JSON
+          value: "false"
+          image: ghcr.io/23technologies/mutating-webhook-envvar:v0.0.1
+        imagePullPolicy: Always
+        name: simple-kubernetes-webhook
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        args:
+          - "HCLOUD_ENDPOINT"
+          - "https://api.hetzner.cloud/v1"
+        volumeMounts:
+        - mountPath: /etc/admission-webhook/tls
+          name: tls
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: acme.com/lifespan-remaining
+        operator: Exists
+      volumes:
+      - name: tls
+        secret:
+          defaultMode: 420
+          secretName: simple-kubernetes-webhook-tls
+---
+apiVersion: v1
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURKRENDQWd5Z0F3SUJBZ0lVT09wckNrMGVaR2hlUUxmUWtpcEZsREorWmVZd0RRWUpLb1pJaHZjTkFRRUwKQlFBd01URUxNQWtHQTFVRUJoTUNRVlV4SWpBZ0JnTlZCQU1NR1hOcGJYQnNaUzFyZFdKbGNtNWxkR1Z6TFhkbApZbWh2YjJzd0hoY05Nakl4TVRFME1qQXpPVEV6V2hjTk1qTXhNVEUwTWpBek9URXpXakF4TVFzd0NRWURWUVFHCkV3SkJWVEVpTUNBR0ExVUVBd3daYzJsdGNHeGxMV3QxWW1WeWJtVjBaWE10ZDJWaWFHOXZhekNDQVNJd0RRWUoKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTC90U3hzWWkvdmEveUhkbkp3YVFBQmNSMjh1a2FlNgpzS24vREk0VDFtMVZJbFFWbUdSSUhPU0JlWmRtRWFZMFVDRXhZTGVJWmtCbm9pWDNKUituNG95TWJpK004TnBPCmc2a3BHOFlqcm1KNGpRWi93c1ZqUzFBOWVZVTUzVVR3eGFFQ2dwZmIwSUNrTzNlNE94VjN1cG5Ud1pCU0hlOGsKR1N2NnBQb084TTJSYUUxRVJlRWxreUNmZ2JmZlQ4YWJlemRqZEc2WTczWTl4MjcrNHRmMkJoKzRhR2pkd2NWbQphaGVHTUhIZGV5QVBwRFR0UDd0ZHFRZXdPenhsQkNJeUx2SWxrYnNwS1I2OFNOUWN5K2Q4SEJmVHB6NldQNGpzClpQNm50VHpsNkZibEhCSUhXZHpscEhTSGlFUmhiSEU0RXBDNnpUVTRXdmN3eDNwaXNnSDNhR3NDQXdFQUFhTTAKTURJd01BWURWUjBSQkNrd0o0SWxjMmx0Y0d4bExXdDFZbVZ5Ym1WMFpYTXRkMlZpYUc5dmF5NWtaV1poZFd4MApMbk4yWXpBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQTBzdFVWTDlzOEpXeEtDb1lwS1FMRko2QXY3OWUyQ3YzCldqVzFJK1NTWVdGalliMlgzaUN3eUUvaUl0QkZ0U2c1bVhVOVgxaFZFNWVXc1ZvYkVDR3dqam43K3FLd3hhU1gKRzFrVlE3M29BWllUcGVFYXNVbi9LTERUUWhQT0JSYXFMYlB3SWd1NFNva3VuTDRMMHNaS1EyL1VJYWRDY3p1WgpXRWxZNkJKQ1FMbE1uS1Q1WUROMUo0bk40bHhGc2lHV0ZvM29TTkZwcjJNbTR4dkxKc0FTUVd4ckFYM3ZYWlR3ClBSYnM2d0pialF5OFZPUy9ndnpnQjZIQ0lvd3o5NjVhalllaFpldE1NUERRclllbi8zc1NhaUt0ZkkrY2VyNDIKeUE2MWdlN203bS9QRk1VMU9XN2ZYeHpwRXR1cTA2Q25RdXpkUmxJYkJEbXhOSWY4eEx1ejFBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRQy83VXNiR0l2NzJ2OGgKM1p5Y0drQUFYRWR2THBHbnVyQ3Avd3lPRTladFZTSlVGWmhrU0J6a2dYbVhaaEdtTkZBaE1XQzNpR1pBWjZJbAo5eVVmcCtLTWpHNHZqUERhVG9PcEtSdkdJNjVpZUkwR2Y4TEZZMHRRUFhtRk9kMUU4TVdoQW9LWDI5Q0FwRHQzCnVEc1ZkN3FaMDhHUVVoM3ZKQmtyK3FUNkR2RE5rV2hOUkVYaEpaTWduNEczMzAvR20zczNZM1J1bU85MlBjZHUKL3VMWDlnWWZ1R2hvM2NIRlptb1hoakJ4M1hzZ0Q2UTA3VCs3WGFrSHNEczhaUVFpTWk3eUpaRzdLU2tldkVqVQpITXZuZkJ3WDA2YytsaitJN0dUK3A3VTg1ZWhXNVJ3U0IxbmM1YVIwaDRoRVlXeHhPQktRdXMwMU9GcjNNTWQ2CllySUI5MmhyQWdNQkFBRUNnZ0VBS3hRaUJZVHU5cXJqRlVEZXhCTUlSb3h2NUQ2NXBzSTZvUTJFVGVlWis1UmUKVGkxQ3RVK1NYSi9MSVBaaUE4SStNaFVaTmxqQlNyZDRKN2xmZGNtRENqVUREbDArT21IaEgza0FxT3FkVzdEZgpScFFxclk5cCtpcXlPZnNROVVadHRZUVF0L0U0elljUGFnSEtFVGw4Z3NhSzdjL2d0Q3FRRTlVQWJyZ255SnYwCjk3VytCQ0MzRVpTeU5DK2hCbm1OSWJZenRlSjF6ZTRNN2pBOU81MVY4V1pRUFdqRmEyb2tNL01VM2pMbjNBdkcKYk9mU2ZhYkkzaDcvSmJJYmNBSXNkcHBqd2Q5TTROTXdCZXAwNFF4VXl1NzJIclFZSUhHNUxiSmxRM1J3Y3pnNgpHRDZEUDhFdnd0OG9OdldBUk5YRDFzQWR0ZVdIczlXa1A5NVFIdmtTY1FLQmdRRHF3a2JuRVpJdjJPS1hkWWs5CjF1SVR0UkV6Ujg5czJBRDM4NUYyR1FEVXZ6dldsWEY0SEgxcXZnUk9tdS9jaGgyeTdBYkpzNG1XOTZvRzdNUFEKOGE1aWVEUGR0eGx3TWx2bVF4cy9Qc3VodHl5NDBNeGZiaS9BUW40SXFvWlo4NG93ZnZUTUZpQ2dMN3REZUJuTApjK0MzR21pbGdsdzJVdkQrVml5M3pGellIUUtCZ1FEUlN1WW95elpVY3BhcXNBTjlFWG5zc015YnlSWHpQbzdECnBOT1hXZkNzL3ZSN3czYlIwWkpOUHBScmNQTW5HRXhUZndVSURVNDdRZWRwM2FiMVJHVmVyeFFWNHZFNEVZTjkKWWdKZTk0b09BUEJzZ01FVy9BcFdibGZxTjF3dWdMaElVekZEQWdsOUwwV010S2E3cFRZU0hjODB0MHNsc21SVQpzREVhek91c0p3S0JnUUN5ZmRaMDk4b2pzUTdQdytEK2NMUmg4WWpMYWEwUGY4aDB2ZTk2VUpadUs1eHVraCs5CkNFUmZkV3hHNjh5MTZnOElyQ2FaRTNYb29CUFp3Z2s4ZzVWb2J5WllURS8rRzN2K1BrV29ON0dTR25qWmFJQUwKaXZhcGdxVGJKL1NRemZmaTJaUjgyOUlnbVVvVGlXeHJZWWFaRVc1QmNUVjFaR2l4cUluRmtZK0NEUUtCZ1FETApDSWI1QWhKRm9CZ3JvNjd1c0hxQU5BOTUvWHd1eWZ4RExXNGF3S1Nybm5YY2JvV2hERmFLV3ZBdXZwY1QwUTJTClhvR3FDd1plbEJPRDd3UGRvYWxaVGkwRkFuQ1J2T083U2M0VkJMekgwdjlwc3dvZVd3bElTYWs5ek5DL1NCMysKQTc2aFM2T2E3clhneHd1TXM3d2RuUTk3QzJsNk8zSDdlaVZZNDN5cE53S0JnRmlONFBLa0NkbEltVWFXNUg5KwpmVlhPcVlQTHFYSGpwNmQyNDZsNGxnN2NOZU5qUnJwcS9Ka05zZ2pVWVBBWEl0cmkyWTJLL21aazZaVzhjQkdLCnEwWGpkQkllcHkzUnpZcFRkcVpWMTlCRVp1bU0yMHhtclk4VE9JaWVHRGo3R3NPT2U4QTdhRmRFUmtZV3N1azQKQmlWZVhUK3pDOEMzWWU1ZUJleTVrVnU0Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+kind: Secret
+metadata:
+  name: simple-kubernetes-webhook-tls
+  namespace: default
+type: kubernetes.io/tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: simple-kubernetes-webhook
+  name: simple-kubernetes-webhook
+  namespace: default
+spec:
+  ports:
+    - port: 443
+  selector:
+    app: simple-kubernetes-webhook
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: simple-kubernetes-webhook.acme.com
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURRekNDQWl1Z0F3SUJBZ0lVWk5IanJhOFY0YUJxUTYrY2hrdFYzSXFYdjY0d0RRWUpLb1pJaHZjTkFRRUwKQlFBd01URUxNQWtHQTFVRUJoTUNRVlV4SWpBZ0JnTlZCQU1NR1hOcGJYQnNaUzFyZFdKbGNtNWxkR1Z6TFhkbApZbWh2YjJzd0hoY05Nakl4TVRFME1qQXpPVEV6V2hjTk1qTXhNVEUwTWpBek9URXpXakF4TVFzd0NRWURWUVFHCkV3SkJWVEVpTUNBR0ExVUVBd3daYzJsdGNHeGxMV3QxWW1WeWJtVjBaWE10ZDJWaWFHOXZhekNDQVNJd0RRWUoKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBT2xFc245d3ptend3RkJUM201QVgvbm42SUtsUHFycApHV1J2ZDA1OXpZVGNyTGc1QTNBTjVIb0t3RE9wdTd4UXRXenZHR2hwZHBoYVlSRmxySWdIR1IvcjJRSjdXNGZDCllqNjFUTXlOOWdoc1hFakxlcmlsd0NaOHdCbjgvdUpWdVdvWE5hV3k2eDVUdUZIQUtwL2JCOHNXbHNyUjZwWTcKU0Mxd3h6ckhPQmJVK2czUXdzM0U0Zm9HTjVXODYxVjYrTnI5UVhEbXdnWnhtZStTc2VOSlZlRnhuUm40cE4xYgpOR0p4Z3Z2SW9naHhWWjFzVmRJWGkwSHZBRW5hTnhSM0piL2NFVlRNRW5zKzA4WWF2ZS9EVWZxSlVnelVHbDJJCks4b2s5V24rT01GeFJRYVFUZ3FYL2xTM0hWc01aRHFBWXVXUzRQOUYySUxwczhhbUFXMUNBNEVDQXdFQUFhTlQKTUZFd0hRWURWUjBPQkJZRUZQc1R0eG5GTGNqZy9YYjNFQ1pycGxtZjJNb0xNQjhHQTFVZEl3UVlNQmFBRlBzVAp0eG5GTGNqZy9YYjNFQ1pycGxtZjJNb0xNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMCkJRQURnZ0VCQURsc3hneGRjZGpxU3VLQlgrT3FLcmVQR05YS2c3bEZFUndPdnFOUFZrT0pIMVdpOFh0NjNhTEgKNnY2N0VJV1VEZnA1VXJXZCtoUnl6TEk4Um5XREExUTl2dDFnbzZXRXVWcWRUTjlsYk5WYi90Qk41SzhRbWFaNgpJSUNQSkIxdHNVUE9RL1FZd3JlQ0pjelNodzFMbDhHT0hSMk9OQ3VzYTJLNWN3bjBnYVFtR1VNQkI4dVZSaHY4CllYOGNYWkxuSnh5am1JTU4xbzFLNDV5UTNJT0NRWFMvZHJEWVZMT3B0RnpLSEpjUE9yRzhaZG1tdi9CZ0RmZ2oKRHlnVFg3OURFdzZQcmFXa3lLaVBmSzBzTlU4WDF1QjZROS9NTVFHUk11YTBjVTh6TXRNVmVsVEFjai9VSTg0TApKbXF5dzY3VTFmckk3bFo0QW5Fbi8zV2p0ZzhHZEEwPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    service:
+      name: simple-kubernetes-webhook
+      namespace: default
+      path: /mutate-pods
+      port: 443
+  failurePolicy: Ignore
+  matchPolicy: Equivalent
+  name: simple-kubernetes-webhook.acme.com
+  reinvocationPolicy: Never
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - pods
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 2
+
