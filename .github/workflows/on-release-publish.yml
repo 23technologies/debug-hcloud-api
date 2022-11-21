@@ -28,5 +28,5 @@ jobs:
       with:
         push: true
         tags: |
-          ghcr.io/23technologies/machine-controller-manager-provider-hcloud:latest
-          ghcr.io/23technologies/machine-controller-manager-provider-hcloud:${{ github.ref_name }}
+          ghcr.io/23technologies/mutating-webhook-envvar:latest
+          ghcr.io/23technologies/mutating-webhook-envvar:${{ github.ref_name }}
