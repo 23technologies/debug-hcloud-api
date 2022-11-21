@@ -1,16 +1,18 @@
 package mutation
 
 import (
+	"errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	"os"
 )
 
-// injectEnv is a container for the mutation injecting environment vars
+// injectCert is a container for the mutation injecting environment vars
 type injectEnv struct {
 	Logger logrus.FieldLogger
 }
 
-// injectEnv implements the podMutator interface
+// injectCert implements the podMutator interface
 var _ podMutator = (*injectEnv)(nil)
 
 // Name returns the struct name
@@ -21,21 +23,24 @@ func (se injectEnv) Name() string {
 // Mutate returns a new mutated pod according to set env rules
 func (se injectEnv) Mutate(pod *corev1.Pod) (*corev1.Pod, error) {
 	se.Logger = se.Logger.WithField("mutation", se.Name())
-	mpod := pod.DeepCopy()
-
+	if len(os.Args) != 3 {
+		se.Logger.Warning("Can't mutate Pods, invalid number of arguments provided (needs 2) :/")
+		return pod, errors.New("need exactly two arguments to mutate the pods")
+	}
+	mutatedPod := pod.DeepCopy()
 	// build out env var slice
 	envVars := []corev1.EnvVar{{
-		Name:  "KUBE",
-		Value: "true",
+		Name:  os.Args[1],
+		Value: os.Args[2],
 	}}
 
 	// inject env vars into pod
 	for _, envVar := range envVars {
 		se.Logger.Debugf("pod env injected %s", envVar)
-		injectEnvVar(mpod, envVar)
+		injectEnvVar(mutatedPod, envVar)
 	}
 
-	return mpod, nil
+	return mutatedPod, nil
 }
 
 // injectEnvVar injects a var in both containers and init containers of a pod
