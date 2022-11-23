@@ -1,7 +1,7 @@
 # Debug hcloud reverse-proxy
 This repo contains a mutatingwebhook that uses the ENV variable HCLOUD_ENDPOINT to redirect all requests that normally go to api.hetzner.cloud to a reverse-proxy that stores and forwards the request. The code for the webhook is located under `webhook`. A manifest to use the webhook and to redirect requests to a reverse proxy can be found under `k8s/mutatingwebhook.yaml`. To analyze a cluster you can just:
 ```
-kubectl apply -f https://raw.githubusercontent.com/23technologies/debug-hcloud-api/305bb8f8504d87a296acf3a29eed3a334c4a39be/k8s/mutatingwebhook.yaml
+kubectl apply -f https://raw.githubusercontent.com/23technologies/debug-hcloud-api/5852b622e15760a6f69cd60f50cda3d6834e0cf3/k8s/mutatingwebhook.yaml
 ```
 
 ## Reverse proxy configuration
