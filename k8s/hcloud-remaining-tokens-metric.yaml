@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: hcloud-metrics
+---
+apiVersion: v1
+data:
+  metricsserver.py: |
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    import requests
+
+    listen_address= "0.0.0.0"
+    serverPort = 8080
+
+    class MyServer(BaseHTTPRequestHandler):
+        def do_GET(self):
+            response = requests.get('https://api.hetzner.monitoring.23t-prod.okeanos.dev/v1/datacenters/', headers={'Authorization': 'Bearer <hcloud token here>' })
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(bytes("ratelimit_limit ", "utf-8"))
+            self.wfile.write(bytes(response.headers["ratelimit-limit"], "utf-8"))
+            self.wfile.write(bytes("\n", "utf-8"))
+            self.wfile.write(bytes("ratelimit_remaining ", "utf-8"))
+            self.wfile.write(bytes(response.headers["ratelimit-remaining"], "utf-8"))
+            self.wfile.write(bytes("\n", "utf-8"))
+            self.wfile.write(bytes("ratelimit_reset ", "utf-8"))
+            self.wfile.write(bytes(response.headers["ratelimit-reset"], "utf-8"))
+            self.wfile.write(bytes("\n", "utf-8"))
+
+    if __name__ == "__main__":
+        webServer = HTTPServer((listen_address, serverPort), MyServer)
+        print("Server started http://%s:%s" % (listen_address, serverPort))
+        webServer.serve_forever()
+kind: ConfigMap
+metadata:
+  name: hcloud-metrics-script
+  namespace: hcloud-metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    app: hcloud-metrics
+  name: hcloud-metrics
+  namespace: hcloud-metrics
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: hcloud-metrics
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: hcloud-metrics
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - |
+          pip install requests; python /opt/metricsserver.py
+        image: python
+        imagePullPolicy: Always
+        name: python
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/
+          name: program
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: hcloud-metrics-script
+        name: program
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hcloud-metrics
+  name: hcloud-metrics
+  namespace: hcloud-metrics
+spec:
+  clusterIP: 100.88.169.20
+  clusterIPs:
+  - 100.88.169.20
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 8080
+  selector:
+    app: hcloud-metrics

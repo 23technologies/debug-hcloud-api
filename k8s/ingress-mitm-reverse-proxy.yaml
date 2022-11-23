@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hetzner-api
+spec:
+  type: ExternalName
+  externalName: api.hetzner.cloud
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hetzner-mitm
+  annotations:
+    dns.gardener.cloud/class: garden
+    dns.gardener.cloud/dnsnames: api.hetzner.monitoring.23t-prod.okeanos.dev
+    dns.gardener.cloud/ttl: "500"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/upstream-vhost: api.hetzner.cloud 
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      access_log /mnt/nginxlog/access.log;
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - api.hetzner.monitoring.23t-prod.okeanos.dev
+      secretName: secret-tls-hetzner
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hetzner-api
+            port:
+              number: 443
+    host: api.hetzner.monitoring.23t-prod.okeanos.dev

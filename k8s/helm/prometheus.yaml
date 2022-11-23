@@ -1,0 +1,35 @@
+pushgateway:
+  enabled: false
+nodeExporter:
+  enabled: false
+
+server:
+  extraFlags:
+    - "web.enable-lifecycle"
+    - "web.enable-admin-api"
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      dns.gardener.cloud/class: garden
+      dns.gardener.cloud/dnsnames: p.monitoring.23t-prod.okeanos.dev
+      dns.gardener.cloud/ttl: "500"
+
+    tls:
+      - secretName: prometheus-tls
+        hosts:
+          - p.monitoring.23t-prod.okeanos.dev
+    hosts:
+      - p.monitoring.23t-prod.okeanos.dev
+
+serverFiles:
+  prometheus.yml:
+    scrape_configs:
+      - job_name: nginx
+        scrape_interval: 10s
+        static_configs:
+          - targets: ["ingress-nginx-controller-metrics.nginx.svc.cluster.local:4040"]
+      - job_name: hcloud_remaining_tokens
+        static_configs:
+          - targets: ["hcloud-metrics.hcloud-metrics:8080"]
