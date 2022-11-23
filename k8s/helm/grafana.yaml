@@ -22,3 +22,6 @@ datasources:
       type: prometheus
       url: http://prometheus-server.prometheus.svc.cluster.local
       isDefault: true
+grafana.ini:
+  auth.anonymous:
+    enabled: true

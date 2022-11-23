@@ -25,6 +25,9 @@ data:
           replacement = "$1"
         }
       }
+      relabel "user_agent" { 
+        from = "http_user_agent" 
+      }
       labels {
         app = "default"
       }
